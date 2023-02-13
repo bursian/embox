@@ -9,8 +9,8 @@ module keypad {
 	option number kp_poll_period = 10
 	option number kp_hold_ticks = 3
 
-	option number kp_col0_port = 2
-	option number kp_col0_pino = 8
+	option number kp_col0_port = 2		// pad 1 (of 8) on AK1604 keypad (below key "0", pad 0 is unconnected)
+	option number kp_col0_pino = 8		// it is example with Nucleo-F429ZI
 	option number kp_col1_port = 2
 	option number kp_col1_pino = 9
 	option number kp_col2_port = 2
