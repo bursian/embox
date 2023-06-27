@@ -36,3 +36,13 @@ module stm32_spi5 {
 	option number log_level=1
 	source "stm32_spi5.c"
 }
+
+@BuildDepends(third_party.bsp.st_bsp_api)
+module stm32_spi {
+	option number log_level=1
+
+	source "stm32_spi.c"
+
+	depends embox.driver.spi.core
+	depends third_party.bsp.st_bsp_api
+}
