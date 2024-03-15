@@ -1,0 +1,145 @@
+/**
+ * @file spi.c
+ * @brief
+ * @author Denis Deryugin <deryugin.denis@gmail.com>
+ * @version
+ * @date 20.12.2019
+ */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+//#include <endian.h>
+
+#include <drivers/spi.h>
+
+static void print_help(char **argv) {
+	printf("Transfer bytes via SPI bus\n");
+	printf("Usage:\n");
+	printf("%s [-s] [-m] [-b] bus_number line_number data0 [data1 [data2 [...]]]\n", argv[0]);
+	printf("%s [-l] [-h]\n", argv[0]);
+	printf("\t -s - slave mode\n");
+	printf("\t -m - master mode\n");
+//	printf("\t -b - big endian on the other side\n");
+	printf("\t -f - full time cs\n");
+	printf("\t -x - 16 bit output format\n");
+	printf("\t -l - list SPI buses\n");
+	printf("\t -h - this help\n");
+}
+
+static void list_spi_devices(void) {
+	for (int i = 0; i < SPI_REGISTRY_SZ; i++) {
+		struct spi_device *s = spi_dev_by_id(i);
+
+		if (s == NULL) {
+			continue;
+		}
+
+		printf("Bus %d: ", i);
+
+		if (s->dev == NULL) {
+			printf("(unnamed)\n");
+			continue;
+		}
+
+		printf("%s\n", s->dev->name);
+	}
+}
+
+int main(int argc, char **argv) {
+	int spi_bus, spi_line;
+	int ret, opt;
+	bool set_mode = false, master_mode = false, full_time_cs = false, format_16bit=false;
+//	bool big_endian = false;
+	struct spi_device *dev;
+
+	while (-1 != (opt = getopt(argc, argv, "lhsmfx"))) {
+		switch(opt) {
+		case 's':
+			set_mode = true;
+			master_mode = false;
+			break;
+		case 'm':
+			set_mode = true;
+			master_mode = true;
+			break;
+//		case 'b':
+//			big_endian = true;
+//			break;
+		case 'f':
+			full_time_cs = true;
+			break;
+		case 'x':
+			format_16bit = true;
+			break;
+		case 'l':
+			list_spi_devices();
+			return 0;
+		case 'h':
+			print_help(argv);
+			return 0;
+		}
+	}
+
+	if (argc < 3 + optind) {
+		print_help(argv);
+		return 0;
+	}
+
+	spi_bus = strtol(argv[optind], NULL, 0);
+	spi_line = strtol(argv[optind + 1], NULL, 0);
+
+	dev = spi_dev_by_id(spi_bus);
+	if (dev == NULL) {
+		printf("Failed to select bus #%d\n", spi_bus);
+		return -ENOENT;
+	}
+	dev->is_master = true;
+
+	if (set_mode) {
+		if (master_mode) {
+			if (spi_set_master_mode(dev)) {
+				printf("Failed to set SPI master mode\n");
+				return -1;
+			}
+		} else {
+			if (spi_set_slave_mode(dev)) {
+				printf("Failed to set SPI slave mode\n");
+				return -1;
+			}
+		}
+	}
+
+	dev->flags |= SPI_CS_ACTIVE;
+	if (full_time_cs)	dev->flags &= ~SPI_CS_INACTIVE;
+	else			dev->flags |= SPI_CS_INACTIVE;
+
+	ret = spi_select(dev, spi_line);
+	if (ret < 0) {
+		printf("Failed to select line #%d!\n", spi_line);
+		return ret;
+	}
+
+	printf("Received data:");
+	for (int i = optind + 2; i < argc; i++) {
+		uint16_t buf_in, buf_out;
+
+		buf_out = strtol(argv[i], NULL, 0);
+
+//		if (big_endian) buf_out = htobe16(buf_out);
+
+		if (i + 1 == argc) dev->flags |= SPI_CS_INACTIVE;
+
+		spi_transfer(dev, (uint8_t*)&buf_out, (uint8_t*)&buf_in, 1);
+
+//		if (big_endian) buf_in = be16toh(buf_in);
+
+		if (format_16bit)	printf(" 0x%04x", buf_in);
+		else			printf(" 0x%02x", buf_in);
+	}
+
+	printf("\n");
+
+	return 0;
+}

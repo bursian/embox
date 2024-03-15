@@ -1,0 +1,12 @@
+package embox.driver.video
+
+module ug9664hddag01 {
+	option number log_level=1
+	option number spi_bus=2
+
+	source "ug9664hddag01.c"
+
+	depends embox.driver.video.fb
+	depends embox.driver.spi.stm32_spi2
+	depends embox.driver.gpio.stm32_gpio_l4
+}
