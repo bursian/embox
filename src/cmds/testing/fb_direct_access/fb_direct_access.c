@@ -16,6 +16,7 @@
 #include <util/math.h>
 
 #include <lib/fb_draw.h>
+#include <drivers/video/fb_overlay.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -34,13 +35,18 @@ int main() {
 			r = MIN(0xFF, (1 + x + y) / ((screen_info.width + screen_info.height) / 0xFF));
 			g = MIN(0xFF, (x + 1) / (screen_info.width / 0xFF));
 			b = MIN(0xFF, (1 + screen_info.height - y) / (screen_info.height / 0xFF));
-
+r = 31;
 			if (fb_draw_put_pix(r, g, b, 32, &screen_info, scr_pos + x) != 0) {
 				return -1;
 			}
 		}
 		scr_pos += screen_info.width;
 	}
+
+	struct fb_info *fb_info;
+	fb_info = fb_lookup(0);
+	fb_overlay_init(fb_info, fb_info->screen_base);
+	fb_overlay_put_string(1, 1, "Hello!");
 
 	return 0;
 }

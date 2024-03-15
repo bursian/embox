@@ -59,12 +59,12 @@ int main() {
 	}
 	printf("The framebuffer device was mapped to memory successfully.\n");
 
-	x = 300;
-	y = 100; /* Where we are going to put the pixel */
+	x = 30;
+	y = 10; /* Where we are going to put the pixel */
 
 	/* Figure out where in memory to put the pixel */
-	for (y = 100; y < 300; y++)
-		for (x = 100; x < 300; x++) {
+	for (y = 10; y < 30; y++)
+		for (x = 10; x < 30; x++) {
 
 			location = (x + vinfo.xoffset) * (vinfo.bits_per_pixel / 8)
 					+ (y + vinfo.yoffset) * finfo.line_length;
